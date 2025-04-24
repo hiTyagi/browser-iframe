@@ -274,8 +274,8 @@
       function addNewTab() {
         // Check if we've reached the maximum number of tabs (5)
         const existingTabs = document.querySelectorAll(".tab").length;
-        if (existingTabs >= 5) {
-          alert("Maximum of 5 tabs allowed!");
+        if (existingTabs >= 10) {
+          alert("Maximum of 10 tabs allowed!");
           return;
         }
 
@@ -317,6 +317,9 @@
         contentElement.id = newTabId + "Content";
         contentElement.innerHTML = `<iframe id="${newTabId}Frame" src=""></iframe>`;
         document.getElementById("contentArea").appendChild(contentElement);
+
+        // Add load event listener to update tab title when iframe content loads
+        addIframeLoadListener(newTabId);
 
         // Switch to the newly created tab
         switchToTab(newTabId);
@@ -387,6 +390,54 @@
 
         // Update tab data
         tabData[activeTabId].url = input;
+
+        // Initially update to the URL as title
+        updateTabTitleFromUrl(activeTabId, input);
+      }
+
+      function updateTabTitleFromUrl(tabId, url) {
+        const tabTitleElement = document.querySelector(
+          `[data-tab-id="${tabId}"] .tab-title`
+        );
+        try {
+          const displayUrl = new URL(url).hostname;
+          tabData[tabId].title = displayUrl;
+          tabTitleElement.textContent = displayUrl;
+        } catch (e) {
+          tabData[tabId].title = url || "New Tab";
+          tabTitleElement.textContent = url || "New Tab";
+        }
+      }
+
+      function addIframeLoadListener(tabId) {
+        const iframe = document.getElementById(tabId + "Frame");
+        iframe.addEventListener("load", function () {
+          updateTabTitle(tabId);
+        });
+      }
+
+      function updateTabTitle(tabId) {
+        const iframe = document.getElementById(tabId + "Frame");
+        const tabTitleElement = document.querySelector(
+          `[data-tab-id="${tabId}"] .tab-title`
+        );
+
+        try {
+          // Try to access the iframe's title
+          const iframeTitle = iframe.contentDocument.title;
+
+          if (iframeTitle) {
+            // If we can access the title, use it
+            tabData[tabId].title = iframeTitle;
+            tabTitleElement.textContent = iframeTitle;
+          } else {
+            // If no title available, use the URL
+            updateTabTitleFromUrl(tabId, tabData[tabId].url);
+          }
+        } catch (e) {
+          // Cross-origin restriction - can't access title, use URL instead
+          updateTabTitleFromUrl(tabId, tabData[tabId].url);
+        }
       }
 
       function handleKeyPress(e) {
@@ -413,7 +464,8 @@
       // Load the initial URL when the page loads and initialize handlers
       window.onload = function () {
         changeIframeSrc();
-        initTabHandlers(); // Initialize tab handlers
+        initTabHandlers();
+        addIframeLoadListener("tab1"); // Add listener to the initial tab
       };
     </script>
   </body>
