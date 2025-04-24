@@ -161,6 +161,7 @@
       .browser-actions {
         display: flex;
         align-items: center;
+        position: relative; /* Add this line */
       }
 
       .action-button {
@@ -311,6 +312,168 @@
         border-radius: 50%;
         background-color: #444;
       }
+
+      /* Add styles for dropdown menu */
+      .dropdown-menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background-color: #ffffff;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+      }
+
+      .dropdown-item {
+        padding: 8px 16px;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+
+      .dropdown-item:hover {
+        background-color: #f1f3f4;
+      }
+
+      .dropdown-parent {
+        position: relative;
+      }
+
+      .dropdown-submenu {
+        display: none;
+        position: absolute;
+        top: 0;
+        left: 100%;
+        background-color: #ffffff;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+      }
+
+      .dropdown-parent:hover .dropdown-submenu {
+        display: block;
+      }
+
+      /* Dropdown Menu Styles */
+      .dropdown-menu {
+        position: absolute;
+        right: 10px;
+        top: 45px;
+        background-color: white;
+        border-radius: 4px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        min-width: 150px;
+        z-index: 1000;
+        display: none;
+        overflow: hidden;
+      }
+
+      .dropdown-menu.active {
+        display: block;
+      }
+
+      .dropdown-item {
+        padding: 10px 15px;
+        cursor: pointer;
+        position: relative;
+      }
+
+      .dropdown-item:hover {
+        background-color: #f1f3f4;
+      }
+
+      .dropdown-parent {
+        position: relative;
+      }
+
+      .dropdown-submenu {
+        display: none;
+        position: absolute;
+        left: 100%;
+        top: 0;
+        background-color: white;
+        border-radius: 4px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        min-width: 100px;
+        z-index: 1001; /* Ensure it's above other elements */
+      }
+
+      /* Change this to make submenu visible on hover */
+      .dropdown-item.dropdown-parent:hover .dropdown-submenu {
+        display: block;
+      }
+
+      /* Dark Theme Styles */
+      body.dark-theme {
+        background-color: #202124;
+      }
+
+      .dark-theme .browser-container {
+        background-color: #35363a;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      }
+
+      .dark-theme .tab-bar {
+        background-color: #202124;
+      }
+
+      .dark-theme .tab {
+        background-color: #3c3c3c;
+        border-color: #4a4a4a;
+        color: #e8eaed;
+      }
+
+      .dark-theme .tab.active {
+        background-color: #35363a;
+      }
+
+      .dark-theme .toolbar {
+        background-color: #35363a;
+      }
+
+      .dark-theme .address-bar {
+        background-color: #202124;
+      }
+
+      .dark-theme .address-bar input {
+        color: #e8eaed;
+      }
+
+      .dark-theme .nav-button,
+      .dark-theme .action-button,
+      .dark-theme .secure-icon {
+        color: #9aa0a6;
+      }
+
+      .dark-theme .dropdown-menu {
+        background-color: #35363a;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+      }
+
+      .dark-theme .dropdown-item {
+        color: #e8eaed;
+      }
+
+      .dark-theme .dropdown-item:hover {
+        background-color: #4a4a4a;
+      }
+
+      .dark-theme .dropdown-submenu {
+        background-color: #35363a;
+      }
+
+      .dark-theme .responsive-button {
+        border-color: #4a4a4a;
+        color: #9aa0a6;
+      }
+
+      .dark-theme .responsive-button.active {
+        background-color: #174ea6;
+        color: #8ab4f8;
+        border-color: #8ab4f8;
+      }
     </style>
     <title>Web Browser</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -337,7 +500,7 @@
             <input
               type="text"
               id="urlInput"
-              value="https://pemberly.www.linkedin.com:4443/learning/change-management-foundations-10041380?u=1112"
+              value="https://www.news.com"
               placeholder="Search Google or type a URL"
               onkeypress="handleKeyPress(event)"
             />
@@ -367,7 +530,12 @@
           </div>
           <div class="browser-actions">
             <button class="action-button">⭐</button>
-            <button class="action-button">⋮</button>
+            <button class="action-button" id="overflowMenu">⋮</button>
+            <div class="dropdown-menu" id="overflowDropdown">
+              <div class="dropdown-item" id="lightTheme">Light</div>
+              <div class="dropdown-item" id="darkTheme">Dark</div>
+              <div class="dropdown-item" id="fullReset">Full Reset</div>
+            </div>
           </div>
         </div>
       </div>
@@ -719,6 +887,68 @@
 
         // Set default view (desktop)
         setResponsiveView("desktop");
+      };
+
+      // Overflow menu functionality
+      const overflowMenu = document.getElementById("overflowMenu");
+      const overflowDropdown = document.getElementById("overflowDropdown");
+      const lightTheme = document.getElementById("lightTheme");
+      const darkTheme = document.getElementById("darkTheme");
+      const fullReset = document.getElementById("fullReset");
+
+      // Toggle dropdown menu visibility
+      overflowMenu.addEventListener("click", function (e) {
+        e.stopPropagation();
+        overflowDropdown.classList.toggle("active");
+      });
+
+      // Close dropdown when clicking elsewhere
+      document.addEventListener("click", function () {
+        overflowDropdown.classList.remove("active");
+      });
+
+      // Prevent clicks inside dropdown from closing it
+      overflowDropdown.addEventListener("click", function (e) {
+        e.stopPropagation();
+      });
+
+      /// Theme switching functionality
+      lightTheme.addEventListener("click", function () {
+        document.body.classList.remove("dark-theme");
+        localStorage.setItem("theme", "light");
+        overflowDropdown.classList.remove("active");
+      });
+
+      darkTheme.addEventListener("click", function () {
+        document.body.classList.add("dark-theme");
+        localStorage.setItem("theme", "dark");
+        overflowDropdown.classList.remove("active");
+      });
+
+      // Full reset functionality
+      fullReset.addEventListener("click", function () {
+        window.location.reload();
+      });
+
+      // Apply saved theme on page load
+      document.addEventListener("DOMContentLoaded", function () {
+        const savedTheme = localStorage.getItem("theme");
+        if (savedTheme === "dark") {
+          document.body.classList.add("dark-theme");
+        }
+      });
+
+      // Close the dropdown menu if clicked outside
+      window.onclick = function (event) {
+        if (!event.target.matches("#overflowMenu")) {
+          const dropdowns = document.getElementsByClassName("dropdown-menu");
+          for (let i = 0; i < dropdowns.length; i++) {
+            const openDropdown = dropdowns[i];
+            if (openDropdown.style.display === "block") {
+              openDropdown.style.display = "none";
+            }
+          }
+        }
       };
     </script>
   </body>
