@@ -194,6 +194,7 @@
         display: none;
         width: 100%;
         height: 100%;
+        justify-content: center; /* Center the iframe container */
       }
 
       .tab-content.active {
@@ -204,6 +205,111 @@
         flex: 1;
         width: 100%;
         border: none;
+      }
+
+      .responsive-controls {
+        display: flex;
+        margin-right: 8px;
+      }
+
+      .responsive-button {
+        width: 32px;
+        height: 32px;
+        margin-left: 5px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        border: 1px solid #ddd;
+        background-color: transparent;
+        color: #5f6368;
+        font-size: 14px;
+      }
+
+      .responsive-button:hover {
+        background-color: #f1f3f4;
+      }
+
+      .responsive-button.active {
+        background-color: #e8f0fe;
+        color: #1a73e8;
+        border-color: #1a73e8;
+      }
+
+      .iframe-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex: 1;
+        width: 100%;
+        height: 100%; /* Ensure it takes full height */
+        transition: all 0.3s ease;
+        overflow: auto; /* Add scrolling when content overflows */
+        position: relative; /* For positioning scaled elements */
+      }
+
+      .mobile-view {
+        padding: 20px 0; /* Add padding for scrolling space */
+      }
+
+      .mobile-view iframe {
+        width: 375px !important;
+        height: 667px !important;
+        border: 12px solid #333 !important;
+        border-radius: 24px;
+        border-bottom-width: 50px !important;
+        border-top-width: 50px !important;
+        flex: none;
+        max-height: calc(100vh - 150px); /* Limit max height */
+        transform-origin: top center; /* Scale from top */
+        /* Scale down if too large for viewport */
+        transform: scale(var(--scale-factor, 1));
+      }
+
+      .tablet-view {
+        padding: 20px 0; /* Add padding for scrolling space */
+      }
+
+      .tablet-view iframe {
+        width: 768px !important;
+        height: 1024px !important;
+        border: 16px solid #333 !important;
+        border-radius: 12px;
+        flex: none;
+        max-height: calc(100vh - 150px); /* Limit max height */
+        transform-origin: top center; /* Scale from top */
+        /* Scale down if too large for viewport */
+        transform: scale(var(--scale-factor, 1));
+      }
+
+      /* Add specific styles for desktop view */
+      .desktop-view iframe {
+        width: 100% !important;
+        height: 100% !important;
+        border: none !important;
+        flex: 1;
+      }
+
+      .desktop-view {
+        width: 100%;
+        height: 100%;
+        justify-content: stretch;
+        align-items: stretch;
+        overflow: hidden; /* Hide scrollbars in desktop mode */
+      }
+
+      /* Add a pseudo-element for mobile home button */
+      .mobile-view iframe::after {
+        content: "";
+        position: absolute;
+        bottom: -30px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #444;
       }
     </style>
     <title>Web Browser</title>
@@ -236,6 +342,29 @@
               onkeypress="handleKeyPress(event)"
             />
           </div>
+          <div class="responsive-controls">
+            <button
+              class="responsive-button"
+              id="mobileView"
+              onclick="setResponsiveView('mobile')"
+            >
+              📱
+            </button>
+            <button
+              class="responsive-button"
+              id="tabletView"
+              onclick="setResponsiveView('tablet')"
+            >
+              📔
+            </button>
+            <button
+              class="responsive-button active"
+              id="desktopView"
+              onclick="setResponsiveView('desktop')"
+            >
+              🖥️
+            </button>
+          </div>
           <div class="browser-actions">
             <button class="action-button">⭐</button>
             <button class="action-button">⋮</button>
@@ -244,7 +373,9 @@
       </div>
       <div class="content-area" id="contentArea">
         <div class="tab-content active" id="tab1Content">
-          <iframe id="tab1Frame" src=""></iframe>
+          <div class="iframe-container">
+            <iframe id="tab1Frame" src=""></iframe>
+          </div>
         </div>
       </div>
     </div>
@@ -311,11 +442,11 @@
           .getElementById("tabBar")
           .insertBefore(tabElement, addTabButton);
 
-        // Create content for the new tab
+        // Create content for the new tab - wrap iframe in container
         const contentElement = document.createElement("div");
         contentElement.className = "tab-content";
         contentElement.id = newTabId + "Content";
-        contentElement.innerHTML = `<iframe id="${newTabId}Frame" src=""></iframe>`;
+        contentElement.innerHTML = `<div class="iframe-container"><iframe id="${newTabId}Frame" src=""></iframe></div>`;
         document.getElementById("contentArea").appendChild(contentElement);
 
         // Add load event listener to update tab title when iframe content loads
@@ -461,11 +592,88 @@
         document.getElementById(currentFrameId).contentWindow.location.reload();
       }
 
+      // Add this new function for responsive view toggling
+      function setResponsiveView(viewType) {
+        // Remove all view classes
+        document.querySelectorAll(".iframe-container").forEach((container) => {
+          container.classList.remove(
+            "mobile-view",
+            "tablet-view",
+            "desktop-view"
+          );
+        });
+
+        // Remove active class from all buttons
+        document.querySelectorAll(".responsive-button").forEach((button) => {
+          button.classList.remove("active");
+        });
+
+        // Add the appropriate class based on view type
+        if (viewType === "mobile") {
+          document
+            .querySelectorAll(".iframe-container")
+            .forEach((container) => {
+              container.classList.add("mobile-view");
+              calculateScaleFactor(container, 667 + 124); // height + borders
+            });
+          document.getElementById("mobileView").classList.add("active");
+        } else if (viewType === "tablet") {
+          document
+            .querySelectorAll(".iframe-container")
+            .forEach((container) => {
+              container.classList.add("tablet-view");
+              calculateScaleFactor(container, 1024 + 32); // height + borders
+            });
+          document.getElementById("tabletView").classList.add("active");
+        } else {
+          document
+            .querySelectorAll(".iframe-container")
+            .forEach((container) => {
+              container.classList.add("desktop-view");
+              // Reset any scaling
+              container.style.removeProperty("--scale-factor");
+            });
+          document.getElementById("desktopView").classList.add("active");
+        }
+      }
+
+      // Add this new function to calculate and apply scaling
+      function calculateScaleFactor(container, deviceHeight) {
+        const availableHeight = container.clientHeight;
+        if (availableHeight < deviceHeight) {
+          const scaleFactor = availableHeight / deviceHeight;
+          container.style.setProperty("--scale-factor", scaleFactor);
+        } else {
+          container.style.setProperty("--scale-factor", 1);
+        }
+      }
+
+      // Recalculate on window resize
+      window.addEventListener("resize", function () {
+        const currentView = document.querySelector(
+          ".responsive-button.active"
+        ).id;
+        if (currentView === "mobileView") {
+          document.querySelectorAll(".mobile-view").forEach((container) => {
+            calculateScaleFactor(container, 667 + 124);
+          });
+        } else if (currentView === "tabletView") {
+          document.querySelectorAll(".tablet-view").forEach((container) => {
+            calculateScaleFactor(container, 1024 + 32);
+          });
+        }
+      });
+
       // Load the initial URL when the page loads and initialize handlers
       window.onload = function () {
         changeIframeSrc();
         initTabHandlers();
         addIframeLoadListener("tab1"); // Add listener to the initial tab
+
+        // Add default view class (desktop)
+        document.querySelectorAll(".iframe-container").forEach((container) => {
+          container.classList.add("desktop-view");
+        });
       };
     </script>
   </body>
