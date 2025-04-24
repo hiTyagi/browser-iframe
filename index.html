@@ -35,6 +35,7 @@
         display: flex;
         padding: 8px 8px 0 8px;
         background-color: #dee1e6;
+        align-items: center;
       }
 
       .tab {
@@ -51,6 +52,8 @@
         text-overflow: ellipsis;
         border: 1px solid #ddd;
         border-bottom: none;
+        cursor: pointer;
+        position: relative;
       }
 
       .tab.active {
@@ -63,6 +66,39 @@
         margin-right: 8px;
         background-color: #ccc;
         border-radius: 50%;
+      }
+
+      .tab-close {
+        margin-left: 8px;
+        width: 16px;
+        height: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        font-size: 12px;
+      }
+
+      .tab-close:hover {
+        background-color: rgba(0, 0, 0, 0.1);
+      }
+
+      .add-tab {
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background-color: #f0f0f0;
+        border: 1px solid #ddd;
+        font-size: 18px;
+        margin-left: 5px;
+        cursor: pointer;
+      }
+
+      .add-tab:hover {
+        background-color: #e0e0e0;
       }
 
       .toolbar {
@@ -150,6 +186,18 @@
         flex: 1;
         display: flex;
         flex-direction: column;
+        position: relative;
+      }
+
+      .tab-content {
+        flex: 1;
+        display: none;
+        width: 100%;
+        height: 100%;
+      }
+
+      .tab-content.active {
+        display: flex;
       }
 
       iframe {
@@ -164,11 +212,13 @@
   <body>
     <div class="browser-container">
       <div class="browser-header">
-        <div class="tab-bar">
-          <div class="tab active">
+        <div class="tab-bar" id="tabBar">
+          <div class="tab active" data-tab-id="tab1">
             <div class="tab-icon"></div>
-            <span>New Tab</span>
+            <span class="tab-title">New Tab</span>
+            <div class="tab-close" onclick="closeTab('tab1', event)">✕</div>
           </div>
+          <div class="add-tab" onclick="addNewTab()">+</div>
         </div>
         <div class="toolbar">
           <div class="nav-buttons">
@@ -181,8 +231,8 @@
             <input
               type="text"
               id="urlInput"
-              value="https://www.news.com"
-              placeholder="Type a URL"
+              value="https://pemberly.www.linkedin.com:4443/learning/change-management-foundations-10041380?u=1112"
+              placeholder="Search Google or type a URL"
               onkeypress="handleKeyPress(event)"
             />
           </div>
@@ -192,15 +242,151 @@
           </div>
         </div>
       </div>
-      <div class="content-area">
-        <iframe id="contentFrame" src=""></iframe>
+      <div class="content-area" id="contentArea">
+        <div class="tab-content active" id="tab1Content">
+          <iframe id="tab1Frame" src=""></iframe>
+        </div>
       </div>
     </div>
 
     <script>
+      // Tab management
+      let activeTabId = "tab1";
+      let tabCounter = 1;
+      let tabData = {
+        tab1: {
+          url: document.getElementById("urlInput").value,
+          title: "New Tab",
+        },
+      };
+
+      // Add this function to initialize event handlers
+      function initTabHandlers() {
+        // Add click handler to the first tab
+        const firstTab = document.querySelector('[data-tab-id="tab1"]');
+        firstTab.onclick = function (e) {
+          if (!e.target.classList.contains("tab-close")) {
+            switchToTab("tab1");
+          }
+        };
+      }
+
+      function addNewTab() {
+        // Check if we've reached the maximum number of tabs (5)
+        const existingTabs = document.querySelectorAll(".tab").length;
+        if (existingTabs >= 5) {
+          alert("Maximum of 5 tabs allowed!");
+          return;
+        }
+
+        // Create new tab ID
+        tabCounter++;
+        const newTabId = "tab" + tabCounter;
+
+        // Store tab data
+        tabData[newTabId] = {
+          url: "",
+          title: "New Tab",
+        };
+
+        // Create tab element
+        const tabElement = document.createElement("div");
+        tabElement.className = "tab";
+        tabElement.dataset.tabId = newTabId;
+        tabElement.onclick = function (e) {
+          if (!e.target.classList.contains("tab-close")) {
+            switchToTab(newTabId);
+          }
+        };
+
+        tabElement.innerHTML = `
+          <div class="tab-icon"></div>
+          <span class="tab-title">New Tab</span>
+          <div class="tab-close" onclick="closeTab('${newTabId}', event)">✕</div>
+        `;
+
+        // Add tab before the add-tab button
+        const addTabButton = document.querySelector(".add-tab");
+        document
+          .getElementById("tabBar")
+          .insertBefore(tabElement, addTabButton);
+
+        // Create content for the new tab
+        const contentElement = document.createElement("div");
+        contentElement.className = "tab-content";
+        contentElement.id = newTabId + "Content";
+        contentElement.innerHTML = `<iframe id="${newTabId}Frame" src=""></iframe>`;
+        document.getElementById("contentArea").appendChild(contentElement);
+
+        // Switch to the newly created tab
+        switchToTab(newTabId);
+      }
+
+      function switchToTab(tabId) {
+        // Update active tab
+        document.querySelector(`.tab.active`).classList.remove("active");
+        document
+          .querySelector(`[data-tab-id="${tabId}"]`)
+          .classList.add("active");
+
+        // Update active content
+        document
+          .querySelector(`.tab-content.active`)
+          .classList.remove("active");
+        document.getElementById(`${tabId}Content`).classList.add("active");
+
+        // Update URL in address bar
+        document.getElementById("urlInput").value = tabData[tabId].url;
+
+        // Update active tab ID
+        activeTabId = tabId;
+      }
+
+      function closeTab(tabId, event) {
+        event.stopPropagation(); // Prevent triggering tab switch
+
+        // Check if it's the last tab
+        if (document.querySelectorAll(".tab").length <= 1) {
+          alert("Cannot close the last tab!");
+          return;
+        }
+
+        // Remove tab
+        const tabElement = document.querySelector(`[data-tab-id="${tabId}"]`);
+        const tabContent = document.getElementById(`${tabId}Content`);
+
+        // If closing the active tab, switch to another tab first
+        if (activeTabId === tabId) {
+          // Find next or previous tab to activate
+          let nextTab;
+          if (
+            tabElement.nextElementSibling &&
+            !tabElement.nextElementSibling.classList.contains("add-tab")
+          ) {
+            nextTab = tabElement.nextElementSibling;
+          } else if (tabElement.previousElementSibling) {
+            nextTab = tabElement.previousElementSibling;
+          }
+
+          if (nextTab) {
+            switchToTab(nextTab.dataset.tabId);
+          }
+        }
+
+        // Remove elements and data
+        tabElement.remove();
+        tabContent.remove();
+        delete tabData[tabId];
+      }
+
       function changeIframeSrc() {
-        var input = document.getElementById("urlInput").value;
-        document.getElementById("contentFrame").src = input;
+        const input = document.getElementById("urlInput").value;
+        const currentFrameId = activeTabId + "Frame";
+
+        document.getElementById(currentFrameId).src = input;
+
+        // Update tab data
+        tabData[activeTabId].url = input;
       }
 
       function handleKeyPress(e) {
@@ -210,20 +396,24 @@
       }
 
       function goBack() {
-        document.getElementById("contentFrame").contentWindow.history.back();
+        const currentFrameId = activeTabId + "Frame";
+        document.getElementById(currentFrameId).contentWindow.history.back();
       }
 
       function goForward() {
-        document.getElementById("contentFrame").contentWindow.history.forward();
+        const currentFrameId = activeTabId + "Frame";
+        document.getElementById(currentFrameId).contentWindow.history.forward();
       }
 
       function refreshPage() {
-        document.getElementById("contentFrame").contentWindow.location.reload();
+        const currentFrameId = activeTabId + "Frame";
+        document.getElementById(currentFrameId).contentWindow.location.reload();
       }
 
-      // Load the initial URL when the page loads
+      // Load the initial URL when the page loads and initialize handlers
       window.onload = function () {
         changeIframeSrc();
+        initTabHandlers(); // Initialize tab handlers
       };
     </script>
   </body>
