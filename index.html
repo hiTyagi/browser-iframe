@@ -402,6 +402,9 @@
         };
       }
 
+      // Add this global variable to track current view
+      let currentViewType = "desktop"; // Default view
+
       function addNewTab() {
         // Check if we've reached the maximum number of tabs (5)
         const existingTabs = document.querySelectorAll(".tab").length;
@@ -449,6 +452,10 @@
         contentElement.innerHTML = `<div class="iframe-container"><iframe id="${newTabId}Frame" src=""></iframe></div>`;
         document.getElementById("contentArea").appendChild(contentElement);
 
+        // Apply current view to the new container
+        const newContainer = contentElement.querySelector(".iframe-container");
+        applyCurrentView(newContainer);
+
         // Add load event listener to update tab title when iframe content loads
         addIframeLoadListener(newTabId);
 
@@ -474,6 +481,30 @@
 
         // Update active tab ID
         activeTabId = tabId;
+
+        // Apply the current view settings to the newly active tab container
+        const activeContainer = document.querySelector(
+          `.tab-content.active .iframe-container`
+        );
+        if (activeContainer) {
+          // First make sure the container is visible before calculating dimensions
+          setTimeout(() => {
+            // Re-apply current view mode to ensure proper rendering
+            if (currentViewType === "mobile") {
+              activeContainer.classList.remove("tablet-view", "desktop-view");
+              activeContainer.classList.add("mobile-view");
+              calculateScaleFactor(activeContainer, 667 + 124);
+            } else if (currentViewType === "tablet") {
+              activeContainer.classList.remove("mobile-view", "desktop-view");
+              activeContainer.classList.add("tablet-view");
+              calculateScaleFactor(activeContainer, 1024 + 32);
+            } else {
+              activeContainer.classList.remove("mobile-view", "tablet-view");
+              activeContainer.classList.add("desktop-view");
+              activeContainer.style.removeProperty("--scale-factor");
+            }
+          }, 10); // Short timeout to ensure the container is visible for calculations
+        }
       }
 
       function closeTab(tabId, event) {
@@ -594,6 +625,9 @@
 
       // Add this new function for responsive view toggling
       function setResponsiveView(viewType) {
+        // Update the current view type
+        currentViewType = viewType;
+
         // Remove all view classes
         document.querySelectorAll(".iframe-container").forEach((container) => {
           container.classList.remove(
@@ -648,6 +682,19 @@
         }
       }
 
+      // Add this new helper function
+      function applyCurrentView(container) {
+        if (currentViewType === "mobile") {
+          container.classList.add("mobile-view");
+          calculateScaleFactor(container, 667 + 124);
+        } else if (currentViewType === "tablet") {
+          container.classList.add("tablet-view");
+          calculateScaleFactor(container, 1024 + 32);
+        } else {
+          container.classList.add("desktop-view");
+        }
+      }
+
       // Recalculate on window resize
       window.addEventListener("resize", function () {
         const currentView = document.querySelector(
@@ -670,10 +717,8 @@
         initTabHandlers();
         addIframeLoadListener("tab1"); // Add listener to the initial tab
 
-        // Add default view class (desktop)
-        document.querySelectorAll(".iframe-container").forEach((container) => {
-          container.classList.add("desktop-view");
-        });
+        // Set default view (desktop)
+        setResponsiveView("desktop");
       };
     </script>
   </body>
